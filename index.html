@@ -1,74 +1,58 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ubicación en Tiempo Real</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 30px;
-        }
-        #ubicacion {
-            font-size: 18px;
-            margin-top: 20px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ruta en Bolivia</title>
+
+  <!-- Incluimos los estilos de Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
+
+  <style>
+    #map {
+      height: 100vh;
+      width: 100%;
+    }
+  </style>
 </head>
 <body>
 
-    <h1>Mi Ubicación en Tiempo Real</h1>
-    <button onclick="obtenerUbicacion()">Mostrar Ubicación</button>
+  <div id="map"></div>
 
-    <div id="ubicacion">Esperando permiso para acceder a la ubicación...</div>
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 
-    <script>
-        function obtenerUbicacion() {
-            if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(mostrarUbicacion, mostrarError, {
-                    enableHighAccuracy: true,
-                    maximumAge: 0
-                });
-            } else {
-                document.getElementById("ubicacion").innerText = "La geolocalización no es compatible con este navegador.";
-            }
-        }
+  <script>
+    // Inicializamos el mapa centrado en Bolivia
+    var map = L.map('map').setView([-16.5000, -68.1193], 6);  // Coordenadas de Bolivia
 
-        function mostrarUbicacion(position) {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-            const accuracy = position.coords.accuracy;
+    // Agregamos un mapa base de OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
 
-            document.getElementById("ubicacion").innerHTML = `
-                <strong>Latitud:</strong> ${lat}<br>
-                <strong>Longitud:</strong> ${lon}<br>
-                <strong>Precisión:</strong> ${accuracy} metros
-            `;
-        }
+    // Coordenadas de puntos de la ruta
+    var puntosRuta = [
+      { lat: -16.5000, lng: -68.1193, nombre: 'Punto A - La Paz' },  // Inicio
+      { lat: -17.7833, lng: -63.1825, nombre: 'Punto B - Santa Cruz' },  // Parada intermedia
+      { lat: -19.0196, lng: -65.2615, nombre: 'Punto C - Sucre' },  // Parada intermedia
+      { lat: -16.5000, lng: -68.1193, nombre: 'Punto D - La Paz' }  // Destino
+    ];
 
-        function mostrarError(error) {
-            let mensaje = "";
+    // Agregar marcadores en cada punto
+    puntosRuta.forEach(function(punto) {
+      L.marker([punto.lat, punto.lng])
+        .addTo(map)
+        .bindPopup(punto.nombre)
+        .openPopup();
+    });
 
-            switch(error.code) {
-                case error.PERMISSION_DENIED:
-                    mensaje = "El usuario denegó el permiso para la geolocalización.";
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    mensaje = "La información de ubicación no está disponible.";
-                    break;
-                case error.TIMEOUT:
-                    mensaje = "La solicitud para obtener la ubicación ha caducado.";
-                    break;
-                case error.UNKNOWN_ERROR:
-                    mensaje = "Se produjo un error desconocido.";
-                    break;
-            }
+    // Dibujar la ruta (polilínea) entre los puntos
+    var latlngs = puntosRuta.map(function(punto) {
+      return [punto.lat, punto.lng];
+    });
 
-            document.getElementById("ubicacion").innerText = mensaje;
-        }
-    </script>
+    L.polyline(latlngs, { color: 'blue' }).addTo(map);
+  </script>
 
 </body>
 </html>
-
