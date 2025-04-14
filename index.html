@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ubicación en Tiempo Real</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 30px;
+        }
+        #ubicacion {
+            font-size: 18px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Mi Ubicación en Tiempo Real</h1>
+    <button onclick="obtenerUbicacion()">Mostrar Ubicación</button>
+
+    <div id="ubicacion">Esperando permiso para acceder a la ubicación...</div>
+
+    <script>
+        function obtenerUbicacion() {
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(mostrarUbicacion, mostrarError, {
+                    enableHighAccuracy: true,
+                    maximumAge: 0
+                });
+            } else {
+                document.getElementById("ubicacion").innerText = "La geolocalización no es compatible con este navegador.";
+            }
+        }
+
+        function mostrarUbicacion(position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            const accuracy = position.coords.accuracy;
+
+            document.getElementById("ubicacion").innerHTML = `
+                <strong>Latitud:</strong> ${lat}<br>
+                <strong>Longitud:</strong> ${lon}<br>
+                <strong>Precisión:</strong> ${accuracy} metros
+            `;
+        }
+
+        function mostrarError(error) {
+            let mensaje = "";
+
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    mensaje = "El usuario denegó el permiso para la geolocalización.";
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    mensaje = "La información de ubicación no está disponible.";
+                    break;
+                case error.TIMEOUT:
+                    mensaje = "La solicitud para obtener la ubicación ha caducado.";
+                    break;
+                case error.UNKNOWN_ERROR:
+                    mensaje = "Se produjo un error desconocido.";
+                    break;
+            }
+
+            document.getElementById("ubicacion").innerText = mensaje;
+        }
+    </script>
+
+</body>
+</html>
+
