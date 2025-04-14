@@ -1,0 +1,188 @@
+/* Estilos generales */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    background-color: #f0f0f0;
+    background-image: url('inicio.png'); /* Reemplaza con tu ruta de fondo */
+    background-size: cover;
+    background-position: center;
+}
+
+/* Barra de navegación superior */
+.navbar {
+    background-color: #1b9793f3; /* Color de fondo de la barra de navegación */
+    color: white;
+    padding: 5px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative; /* Necesario para posicionar los botones dentro de la barra */
+}
+
+/* Estilos para los botones en la barra de navegación */
+.navbar .button {
+    color: #000000; /* Texto oscuro */
+    padding: 12px 25px;
+    text-decoration: none;
+    margin: 0 12px;
+    font-size: 1.2em;
+    border: none; /* Elimina cualquier borde */
+    transition: all 0.3s ease-in-out; /* Transición suave */
+    outline: none; /* Elimina el borde de foco cuando se hace clic */
+}
+
+/* Efecto al pasar el cursor sobre el botón */
+.navbar .button:hover {
+    color: #29f7f7; /* Cambio de color al pasar el ratón */
+    text-decoration: underline; /* Subrayado cuando el puntero está sobre el botón */
+}
+
+/* Estilos para el botón cuadrado */
+.button1 {
+    background-image: url('img_barra_inicio.png'); /* Ruta de tu imagen */
+    background-size: cover; /* Ajusta la imagen al tamaño del botón */
+    background-position: center; /* Centra la imagen dentro del botón */
+    width: 120px; /* Ajusta el tamaño del botón */
+    height: 60px; /* Ajusta el tamaño del botón */
+    display: inline-block;
+    text-decoration: none;
+    border-radius: 0px; /* Sin bordes redondeados */
+    transition: background-color 0.3s ease;
+    position: absolute;
+    right: 0; /* Coloca el botón a la derecha de la barra */
+    top: 50%; /* Centra el botón verticalmente */
+    transform: translateY(-50%); /* Alinea correctamente el botón */
+}
+
+/* Efecto de hover */
+.button1:hover {
+    background-color: rgba(255, 87, 51, 0.6); /* Cambia el color al pasar el ratón */
+}
+
+/* Efecto de active (al hacer clic) */
+.button1:active {
+    background-color: rgba(255, 87, 51, 0.4); /* Cambia al hacer clic */
+}
+
+/* Estilo del contenedor principal */
+.container {
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.075); /* Blanco con opacidad */
+    backdrop-filter: blur(10px); /* Aplica un desenfoque de 10px */
+    -webkit-backdrop-filter: blur(10px); /* Para compatibilidad con Safari */ /* Fondo semi-transparente blanco */
+    padding: 25px;
+    border-radius: 120px;
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+
+    width: 450px;
+    height: 490px;
+    position: absolute;
+    top: 90px;
+    left: 25%; /* Centra horizontalmente */
+    transform: translateX(-50%);
+}
+
+/* Estilo del título */
+h1 {
+    color: #b4fffbdc; /* Azul grisáceo oscuro */
+    font-size: 2.5em;
+    margin-bottom: 15px;
+}
+
+/* Estilo de los párrafos */
+p {
+    font-size: 1.2em;
+    color: #b4fffbdc; /* Gris más suave */
+    margin-bottom: 25px;
+}
+
+/* Estilo del formulario */
+form {
+    margin-bottom: 20px;
+}
+
+form label {
+    font-size: 1.1em;
+    color: #333;
+    margin-bottom: 5px;
+    display: block;
+}
+
+/* Estilo de los campos de entrada */
+form input {
+    width: 100%;
+    padding: 10px; /* Reducido el padding */
+    margin: 10px 0;
+    font-size: 1.1em;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-sizing: border-box;
+    max-width: 350px; /* Reducido el ancho de los campos */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+form input:focus {
+    border-color: #b4fffbdc; /* Color de borde cuando el campo está en foco */
+    outline: none;
+}
+
+/* Estilos para el botón "INICIAR SESIÓN" */
+.login-btn {
+    color: #333; /* Texto oscuro */
+    padding: 10px 20px; /* Ajusté el padding para hacerlo más compacto */
+    text-decoration: none;
+    margin: 10px 5px;
+    border-radius: 25px;
+    font-size: 1.2em;
+    background-color: rgba(255, 255, 255, 0.7); /* Fondo semi-transparente blanco */
+    transition: background-color 0.3s, transform 0.3s;
+    display: inline-block;
+    border: 2px solid #333; /* Borde oscuro */
+    
+    /* Ancho y alto del botón */
+    width: auto;  /* El ancho ahora se ajusta al contenido del texto */
+    height: auto;  /* La altura se ajusta también */
+    padding: 8px 25px; /* Ajusté un poco el padding */
+}
+
+.login-btn:hover {
+    background-color: #f0f0f0; /* Color de fondo más claro al pasar el ratón */
+    transform: scale(1.05);
+}
+
+.login-btn:active {
+    background-color: #e0e0e0; /* Fondo aún más claro al hacer clic */
+    transform: scale(1);
+}
+
+/* Estilos para el botón "REGISTRARSE" */
+.register-btn {
+    color: #333; /* Texto oscuro */
+    padding: 10px 20px; /* Ajusté el padding para hacerlo más compacto */
+    text-decoration: none;
+    margin: 10px 5px;
+    border-radius: 25px;
+    font-size: 1.2em;
+    background-color: rgba(255, 255, 255, 0.7); /* Fondo semi-transparente blanco */
+    transition: background-color 0.3s, transform 0.3s;
+    display: inline-block;
+    border: 2px solid #333; /* Borde oscuro */
+    
+    /* Ancho y alto del botón */
+    width: auto;  /* El ancho ahora se ajusta al contenido del texto */
+    height: auto;  /* La altura se ajusta también */
+    padding: 8px 25px; /* Ajusté un poco el padding */
+}
+
+.register-btn:hover {
+    background-color: #f0f0f0; /* Color de fondo más claro al pasar el ratón */
+    transform: scale(1.05);
+}
+
+.register-btn:active {
+    background-color: #e0e0e0; /* Fondo aún más claro al hacer clic */
+    transform: scale(1);
+}
