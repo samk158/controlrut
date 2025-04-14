@@ -1,13 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ruta en Bolivia</title>
-
-  <!-- Incluimos los estilos de Leaflet -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ruta con Paradas + Mi Ubicación</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
   <style>
     #map {
       height: 100vh;
@@ -16,43 +13,72 @@
   </style>
 </head>
 <body>
-
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-
   <script>
-    // Inicializamos el mapa centrado en Bolivia
-    var map = L.map('map').setView([-16.5000, -68.1193], 6);  // Coordenadas de Bolivia
+    const map = L.map('map').setView([-16.5, -68.15], 6); // Centro en Bolivia
 
-    // Agregamos un mapa base de OpenStreetMap
+    // Mapa base
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      attribution: 'Mapa &copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // Coordenadas de puntos de la ruta
-    var puntosRuta = [
-      { lat: -16.5000, lng: -68.1193, nombre: 'Punto A - La Paz' },  // Inicio
-      { lat: -17.7833, lng: -63.1825, nombre: 'Punto B - Santa Cruz' },  // Parada intermedia
-      { lat: -19.0196, lng: -65.2615, nombre: 'Punto C - Sucre' },  // Parada intermedia
-      { lat: -16.5000, lng: -68.1193, nombre: 'Punto D - La Paz' }  // Destino
+    // Puntos de parada
+    const puntosRuta = [
+      { lat: -16.5, lng: -68.15, nombre: "La Paz (Inicio)" },
+      { lat: -17.7833, lng: -63.1825, nombre: "Santa Cruz (Parada 1)" },
+      { lat: -19.0196, lng: -65.2615, nombre: "Sucre (Parada 2)" },
+      { lat: -17.9833, lng: -67.15, nombre: "Oruro (Destino)" }
     ];
 
-    // Agregar marcadores en cada punto
-    puntosRuta.forEach(function(punto) {
-      L.marker([punto.lat, punto.lng])
+    // Dibujar marcadores
+    puntosRuta.forEach(p => {
+      L.marker([p.lat, p.lng])
         .addTo(map)
-        .bindPopup(punto.nombre)
-        .openPopup();
+        .bindPopup(p.nombre);
     });
 
-    // Dibujar la ruta (polilínea) entre los puntos
-    var latlngs = puntosRuta.map(function(punto) {
-      return [punto.lat, punto.lng];
-    });
+    // Dibujar la línea de la ruta
+    const coordenadasRuta = puntosRuta.map(p => [p.lat, p.lng]);
+    L.polyline(coordenadasRuta, { color: 'blue', weight: 4 }).addTo(map);
 
-    L.polyline(latlngs, { color: 'blue' }).addTo(map);
+    // MARCADOR DE UBICACIÓN EN TIEMPO REAL
+    let marcadorUsuario = null;
+
+    if (navigator.geolocation) {
+      navigator.geolocation.watchPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+
+          if (!marcadorUsuario) {
+            marcadorUsuario = L.marker([lat, lng], {
+              icon: L.icon({
+                iconUrl: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+                iconSize: [32, 32],
+                iconAnchor: [16, 32]
+              })
+            }).addTo(map).bindPopup("¡Estás aquí!").openPopup();
+          } else {
+            marcadorUsuario.setLatLng([lat, lng]);
+          }
+
+          map.setView([lat, lng], 14);
+        },
+        (err) => {
+          alert("No se pudo obtener tu ubicación: " + err.message);
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 0,
+          timeout: 5000
+        }
+      );
+    } else {
+      alert("Tu navegador no soporta geolocalización.");
+    }
   </script>
-
 </body>
 </html>
+
