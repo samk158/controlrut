@@ -3,29 +3,40 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Ruta por Calles con Paradas + Ubicación</title>
+  <title>Ruta con Paradas + Control de Posición</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
   <style>
-    #map {
-      height: 100vh;
+    #map { height: 100vh; }
+    #mensaje {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: white;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      z-index: 1000;
+      font-family: sans-serif;
     }
   </style>
 </head>
 <body>
+  <div id="mensaje">Cargando ubicación...</div>
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
-    const apiKey = '5b3ce3597851110001cf62487dd703f6458046c3aa4f5c0d8acea99b'; // ← Coloca aquí tu API Key de OpenRouteService
+    const apiKey = 'TU_API_KEY_AQUI'; // ← Reemplazá por tu clave de OpenRouteService
 
     const map = L.map('map').setView([-16.5, -68.15], 13);
 
-    // Mapa base
+    // Cargar mapa base
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // Puntos de parada
+    const mensaje = document.getElementById('mensaje');
+
     const puntosRuta = [
       { lat: -16.504157, lng: -68.121039, nombre: "Plz. Triangular (Inicio)" },
       { lat: -16.519312, lng: -68.116206, nombre: "Curva de Olguin (Parada 1)" },
@@ -34,26 +45,23 @@
       { lat: -16.534834, lng: -68.086801, nombre: "Teleferico verde (Destino)" }
     ];
 
-    // Dibujar marcadores
     puntosRuta.forEach(p => {
       L.marker([p.lat, p.lng])
         .addTo(map)
         .bindPopup(p.nombre);
     });
 
-    // Obtener coordenadas para la ruta
-    const coords = puntosRuta.map(p => [p.lng, p.lat]); // ORS espera [lng, lat]
+    const coords = puntosRuta.map(p => [p.lng, p.lat]); // [lng, lat] para ORS
+    let rutaCoords = []; // Guardaremos todos los puntos de la ruta aquí
 
-    // Solicitud a OpenRouteService
+    // Solicitar ruta real a ORS
     fetch("https://api.openrouteservice.org/v2/directions/driving-car/geojson", {
       method: "POST",
       headers: {
         "Authorization": apiKey,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        coordinates: coords
-      })
+      body: JSON.stringify({ coordinates: coords })
     })
     .then(res => res.json())
     .then(data => {
@@ -61,15 +69,58 @@
         style: { color: "blue", weight: 4 }
       }).addTo(map);
       map.fitBounds(ruta.getBounds());
+
+      // Extraemos los puntos de la ruta para comparar distancias
+      rutaCoords = data.features[0].geometry.coordinates.map(coord => ({
+        lat: coord[1],
+        lng: coord[0]
+      }));
     })
     .catch(err => {
       console.error(err);
       alert("Error al trazar la ruta: " + err.message);
     });
 
-    // OPCIONAL: Ubicación del usuario en tiempo real
+    // Marcador de usuario
     let marcadorUsuario = null;
 
+    // Función para calcular la distancia entre 2 puntos (en metros)
+    function distanciaEntrePuntos(lat1, lon1, lat2, lon2) {
+      const R = 6371e3; // radio Tierra en metros
+      const rad = Math.PI / 180;
+      const dLat = (lat2 - lat1) * rad;
+      const dLon = (lon2 - lon1) * rad;
+
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * rad) * Math.cos(lat2 * rad) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+      return R * c;
+    }
+
+    function verificarCercania(lat, lng) {
+      let distanciaMinima = Infinity;
+
+      rutaCoords.forEach(punto => {
+        const dist = distanciaEntrePuntos(lat, lng, punto.lat, punto.lng);
+        if (dist < distanciaMinima) {
+          distanciaMinima = dist;
+        }
+      });
+
+      if (distanciaMinima <= 30) {
+        mensaje.innerText = "✅ Que tenga un buen viaje";
+        mensaje.style.background = "#d4edda";
+        mensaje.style.color = "#155724";
+      } else {
+        mensaje.innerText = "🚨 Usted está fuera de la ruta indicada";
+        mensaje.style.background = "#f8d7da";
+        mensaje.style.color = "#721c24";
+      }
+    }
+
+    // Geolocalización del usuario
     if (navigator.geolocation) {
       navigator.geolocation.watchPosition(
         (pos) => {
@@ -87,15 +138,20 @@
           } else {
             marcadorUsuario.setLatLng([lat, lng]);
           }
+
+          verificarCercania(lat, lng);
         },
         (err) => {
-          console.warn("Ubicación no disponible: " + err.message);
+          mensaje.innerText = "⚠️ No se pudo obtener tu ubicación: " + err.message;
+          mensaje.style.background = "#ffeeba";
+          mensaje.style.color = "#856404";
         },
-        { enableHighAccuracy: true }
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
       );
+    } else {
+      mensaje.innerText = "❌ Tu navegador no soporta geolocalización.";
     }
   </script>
 </body>
 </html>
-
 
