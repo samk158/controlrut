@@ -25,12 +25,14 @@
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
   <script>
-    const apiKey = '5b3ce3597851110001cf62487dd703f6458046c3aa4f5c0d8acea99b'; // ← Reemplazá por tu clave de OpenRouteService
+    const apiKey = '5b3ce3597851110001cf62487dd703f6458046c3aa4f5c0d8acea99b'; // ← Clave OpenRouteService
+    const socket = io("https://lavender-steady-diagnostic.glitch.me"); // ← Reemplazá con tu URL de Glitch
 
     const map = L.map('map').setView([-16.5, -68.15], 13);
 
-    // Cargar mapa base
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
@@ -52,9 +54,8 @@
     });
 
     const coords = puntosRuta.map(p => [p.lng, p.lat]); // [lng, lat] para ORS
-    let rutaCoords = []; // Guardaremos todos los puntos de la ruta aquí
+    let rutaCoords = [];
 
-    // Solicitar ruta real a ORS
     fetch("https://api.openrouteservice.org/v2/directions/driving-car/geojson", {
       method: "POST",
       headers: {
@@ -70,7 +71,6 @@
       }).addTo(map);
       map.fitBounds(ruta.getBounds());
 
-      // Extraemos los puntos de la ruta para comparar distancias
       rutaCoords = data.features[0].geometry.coordinates.map(coord => ({
         lat: coord[1],
         lng: coord[0]
@@ -81,19 +81,17 @@
       alert("Error al trazar la ruta: " + err.message);
     });
 
-    // Marcador de usuario
     let marcadorUsuario = null;
 
-    // Función para calcular la distancia entre 2 puntos (en metros)
     function distanciaEntrePuntos(lat1, lon1, lat2, lon2) {
-      const R = 6371e3; // radio Tierra en metros
+      const R = 6371e3;
       const rad = Math.PI / 180;
       const dLat = (lat2 - lat1) * rad;
       const dLon = (lon2 - lon1) * rad;
 
-      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      const a = Math.sin(dLat / 2) ** 2 +
                 Math.cos(lat1 * rad) * Math.cos(lat2 * rad) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                Math.sin(dLon / 2) ** 2;
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
       return R * c;
@@ -120,7 +118,10 @@
       }
     }
 
-    // Geolocalización del usuario
+    function enviarUbicacion(lat, lng) {
+      socket.emit("ubicacion", { lat, lng });
+    }
+
     if (navigator.geolocation) {
       navigator.geolocation.watchPosition(
         (pos) => {
@@ -140,9 +141,10 @@
           }
 
           verificarCercania(lat, lng);
+          enviarUbicacion(lat, lng); // ← Enviar al servidor Glitch
         },
         (err) => {
-          mensaje.innerText = "⚠️ No se pudo obtener tu ubicación: " + err.message;
+          mensaje.innerText = "⚠ No se pudo obtener tu ubicación: " + err.message;
           mensaje.style.background = "#ffeeba";
           mensaje.style.color = "#856404";
         },
@@ -154,4 +156,5 @@
   </script>
 </body>
 </html>
+
 
