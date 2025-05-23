@@ -2,14 +2,14 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Administrador - Seguimiento en tiempo real</title>
+  <title>Administrador - Seguimiento Conductores</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
   <style>
     #map { height: 90vh; width: 100%; }
   </style>
 </head>
 <body>
-  <h1>Administrador - Seguimiento Conductores</h1>
+  <h1>Administrador - Seguimiento en Ruta</h1>
   <div id="map"></div>
 
   <script src="/socket.io/socket.io.js"></script>
@@ -17,23 +17,74 @@
   <script>
     const socket = io();
 
-    const map = L.map('map').setView([-16.5, -68.15], 13);
+    const apiKey = "5b3ce3597851110001cf62487dd703f6458046c3aa4f5c0d8acea99b";
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
+    const map = L.map("map").setView([-16.5, -68.15], 13);
+
+    // Cargar mapa base
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap contributors",
     }).addTo(map);
 
-    // Marcadores de conductores
+    // Coordenadas: inicio, puntos intermedios, destino
+    const puntosRuta = [
+      { lat: -16.504157, lng: -68.121039, nombre: "Inicio" },
+      { lat: -16.519312, lng: -68.116206 }, // punto intermedio
+      { lat: -16.521485, lng: -68.110673 }, // punto intermedio
+      { lat: -16.537941, lng: -68.087285 }, // punto intermedio
+      { lat: -16.534834, lng: -68.086801, nombre: "Destino" },
+    ];
+
+    // Mostrar solo los puntos de inicio y destino
+    puntosRuta.forEach((p) => {
+      if (p.nombre) {
+        L.marker([p.lat, p.lng])
+          .addTo(map)
+          .bindPopup(p.nombre)
+          .openPopup();
+      }
+    });
+
+    const coordsORS = puntosRuta.map((p) => [p.lng, p.lat]);
+
+    // Dibujar la ruta
+    fetch("https://api.openrouteservice.org/v2/directions/driving-car/geojson", {
+      method: "POST",
+      headers: {
+        Authorization: apiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ coordinates: coordsORS }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        const ruta = L.geoJSON(data, {
+          style: { color: "blue", weight: 4 },
+        }).addTo(map);
+        map.fitBounds(ruta.getBounds());
+      })
+      .catch((err) => {
+        console.error(err);
+        alert("Error al cargar la ruta.");
+      });
+
+    // Mostrar ubicaciones de los conductores
     const marcadores = {};
 
-    socket.on('actualizarUbicaciones', (ubicaciones) => {
+    socket.on("actualizarUbicaciones", (ubicaciones) => {
       for (const id in ubicaciones) {
         const { lat, lng } = ubicaciones[id];
 
         if (marcadores[id]) {
           marcadores[id].setLatLng([lat, lng]);
         } else {
-          marcadores[id] = L.marker([lat, lng])
+          marcadores[id] = L.marker([lat, lng], {
+            icon: L.icon({
+              iconUrl: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
+              iconSize: [32, 32],
+              iconAnchor: [16, 32],
+            }),
+          })
             .addTo(map)
             .bindPopup(`Conductor: ${id}`);
         }
