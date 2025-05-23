@@ -18,9 +18,22 @@
       z-index: 1000;
       font-family: sans-serif;
     }
+    #contador {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: white;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      z-index: 1000;
+      font-family: sans-serif;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
+  <div id="contador">Paradas cumplidas: 0 / 2</div>
   <div id="mensaje">Cargando ubicación...</div>
   <div id="map"></div>
 
@@ -36,23 +49,48 @@
     }).addTo(map);
 
     const mensaje = document.getElementById('mensaje');
+    const contadorDiv = document.getElementById('contador');
 
+    // Puntos completos de la ruta (inicio, intermedios y destino)
     const puntosRuta = [
       { lat: -16.504157, lng: -68.121039, nombre: "Plz. Triangular (Inicio)" },
-      { lat: -16.519312, lng: -68.116206, nombre: "Curva de Olguin (Parada 1)" },
-      { lat: -16.521485, lng: -68.110673, nombre: "Alto Obrajes (Parada 2)" },
-      { lat: -16.537941, lng: -68.087285, nombre: "Teleferico verde (Parada 3)" },
+      { lat: -16.519312, lng: -68.116206, nombre: "Curva de Olguin" },
+      { lat: -16.521485, lng: -68.110673, nombre: "Alto Obrajes" },
+      { lat: -16.537941, lng: -68.087285, nombre: "Teleferico verde" },
       { lat: -16.534834, lng: -68.086801, nombre: "Teleferico verde (Destino)" }
     ];
 
-    puntosRuta.forEach(p => {
+    // Solo paradas obligatorias que se deben cumplir (inicio y destino)
+    const paradasObligatorias = [
+      puntosRuta[0], // Inicio
+      puntosRuta[puntosRuta.length - 1] // Destino
+    ];
+
+    // Mostrar marcadores para paradas obligatorias (Inicio y Destino)
+    paradasObligatorias.forEach(p => {
       L.marker([p.lat, p.lng])
         .addTo(map)
         .bindPopup(p.nombre);
     });
 
-    const coords = puntosRuta.map(p => [p.lng, p.lat]); // [lng, lat] para ORS
-    let rutaCoords = []; // Guardaremos todos los puntos de la ruta aquí
+    // Mostrar puntos intermedios visibles con círculos (distintos visualmente)
+    puntosRuta.forEach(p => {
+      const esObligatoria = paradasObligatorias.some(po => po.lat === p.lat && po.lng === p.lng);
+      if (!esObligatoria) {
+        L.circleMarker([p.lat, p.lng], {
+          radius: 6,
+          color: 'orange',
+          fillColor: 'yellow',
+          fillOpacity: 0.7
+        })
+        .addTo(map)
+        .bindPopup(p.nombre);
+      }
+    });
+
+    // Obtener coordenadas para OpenRouteService en formato [lng, lat]
+    const coords = puntosRuta.map(p => [p.lng, p.lat]);
+    let rutaCoords = [];
 
     // Solicitar ruta real a ORS
     fetch("https://api.openrouteservice.org/v2/directions/driving-car/geojson", {
@@ -70,7 +108,7 @@
       }).addTo(map);
       map.fitBounds(ruta.getBounds());
 
-      // Extraemos los puntos de la ruta para comparar distancias
+      // Guardamos los puntos de la ruta para verificar distancia
       rutaCoords = data.features[0].geometry.coordinates.map(coord => ({
         lat: coord[1],
         lng: coord[0]
@@ -81,35 +119,35 @@
       alert("Error al trazar la ruta: " + err.message);
     });
 
-    // Marcador de usuario
     let marcadorUsuario = null;
 
-    // Función para calcular la distancia entre 2 puntos (en metros)
     function distanciaEntrePuntos(lat1, lon1, lat2, lon2) {
-      const R = 6371e3; // radio Tierra en metros
+      const R = 6371e3;
       const rad = Math.PI / 180;
       const dLat = (lat2 - lat1) * rad;
       const dLon = (lon2 - lon1) * rad;
-
-      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(lat1 * rad) * Math.cos(lat2 * rad) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const a = Math.sin(dLat/2)**2 + Math.cos(lat1*rad)*Math.cos(lat2*rad)*Math.sin(dLon/2)**2;
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
       return R * c;
     }
 
-    function verificarCercania(lat, lng) {
-      let distanciaMinima = Infinity;
+    // Distancia máxima para considerar "dentro de ruta" (en metros)
+    const distanciaMaxRuta = 70;
+    // Distancia máxima para considerar una parada cumplida
+    const distanciaMaxParada = 50;
 
+    // Estado para saber qué paradas obligatorias se cumplieron
+    let paradasCumplidas = new Set();
+
+    function verificarCercania(lat, lng) {
+      // Verificar si está dentro de la ruta
+      let distanciaMinRuta = Infinity;
       rutaCoords.forEach(punto => {
         const dist = distanciaEntrePuntos(lat, lng, punto.lat, punto.lng);
-        if (dist < distanciaMinima) {
-          distanciaMinima = dist;
-        }
+        if (dist < distanciaMinRuta) distanciaMinRuta = dist;
       });
 
-      if (distanciaMinima <= 30) {
+      if (distanciaMinRuta <= distanciaMaxRuta) {
         mensaje.innerText = "✅ Que tenga un buen viaje";
         mensaje.style.background = "#d4edda";
         mensaje.style.color = "#155724";
@@ -118,9 +156,26 @@
         mensaje.style.background = "#f8d7da";
         mensaje.style.color = "#721c24";
       }
+
+      // Verificar paradas obligatorias cumplidas
+      paradasObligatorias.forEach((p, index) => {
+        const distParada = distanciaEntrePuntos(lat, lng, p.lat, p.lng);
+        if (distParada <= distanciaMaxParada && !paradasCumplidas.has(index)) {
+          paradasCumplidas.add(index);
+          alert(`¡Parada cumplida: ${p.nombre}!`);
+          actualizarContador();
+        }
+      });
     }
 
-    // Geolocalización del usuario
+    function actualizarContador() {
+      contadorDiv.innerText = `Paradas cumplidas: ${paradasCumplidas.size} / ${paradasObligatorias.length}`;
+      if(paradasCumplidas.size === paradasObligatorias.length) {
+        alert("🎉 ¡Has completado todas las paradas obligatorias!");
+      }
+    }
+
+    // Geolocalización y seguimiento
     if (navigator.geolocation) {
       navigator.geolocation.watchPosition(
         (pos) => {
@@ -154,5 +209,3 @@
   </script>
 </body>
 </html>
-
-
