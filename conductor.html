@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Conductor - Enviar ubicación</title>
+</head>
+<body>
+  <h1>Conductor - Enviando ubicación</h1>
+  <p id="status">Esperando ubicación...</p>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const idConductor = prompt("Ingrese su ID de conductor:");
+
+    const status = document.getElementById('status');
+
+    if (navigator.geolocation) {
+      navigator.geolocation.watchPosition(position => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        socket.emit('ubicacion', { idConductor, lat, lng });
+        status.textContent = `Ubicación enviada: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+      }, error => {
+        status.textContent = "Error al obtener ubicación: " + error.message;
+      }, {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
+      });
+    } else {
+      status.textContent = "Tu navegador no soporta geolocalización.";
+    }
+  </script>
+</body>
+</html>
